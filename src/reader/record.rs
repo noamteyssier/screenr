@@ -20,6 +20,12 @@ impl FastaRecord {
         self.name.is_empty() 
             & self.seq.is_empty() 
     }
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+    pub fn get_seq(&self) -> &str {
+        &self.seq
+    }
 }
 #[derive(Debug)]
 pub struct FastqRecord {
@@ -48,5 +54,14 @@ impl FastqRecord {
         self.name.is_empty() 
             & self.seq.is_empty() 
             & self.qual.is_empty()
+    }
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+    pub fn get_seq(&self) -> &str {
+        &self.seq
+    }
+    pub fn get_qual(&self) -> &str {
+        &self.qual
     }
 }
