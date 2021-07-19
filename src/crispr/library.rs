@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{collections::HashMap, fs::File, io::{Error, Write}};
 use regex::Regex;
 use crate::reader::{FastqRead, FastqRecord};
 use super::{Fasta, utils::reverse_complement};
@@ -155,7 +155,7 @@ impl Library {
     }
 
     /// Writes the count table to file
-    pub fn write_count_table(&mut self, filename: &str, labels: Vec<&str>) {
+    pub fn write_count_table(&mut self, filename: &str, labels: Vec<&str>) -> Result<(), Error> {
 
         // open file
         let mut file = File::create(filename)
@@ -163,11 +163,11 @@ impl Library {
         
 
         // write header
-        file.write_all("sgRNA\tGene".as_bytes());
+        file.write_all("sgRNA\tGene".as_bytes())?;
         for l in labels {
-            file.write_all(format!("\t{}", l).as_bytes());
+            file.write_all(format!("\t{}", l).as_bytes())?;
         }
-        file.write_all("\n".as_bytes());
+        file.write_all("\n".as_bytes())?;
 
         // write counts
         self.counts
@@ -176,13 +176,14 @@ impl Library {
                 let gene = self.genes.get(k).unwrap();
                 let counts = self.counts.get(k).unwrap();
 
-                file.write_all(format!("{}\t{}", k, gene).as_bytes());
+                file.write_all(format!("{}\t{}", k, gene).as_bytes()).unwrap();
                 for c in counts.iter() {
-                    file.write_all(format!("\t{}", c).as_bytes());
+                    file.write_all(format!("\t{}", c).as_bytes()).unwrap();
                 }
-                file.write_all("\n".as_bytes());
+                file.write_all("\n".as_bytes()).unwrap();
             });
 
+        Ok(())
     }
 
     /// Summary statistics on forward/reverse/total reads

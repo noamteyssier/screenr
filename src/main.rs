@@ -80,11 +80,9 @@ fn main() {
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
-//    run_matching(input_sequences, output_filename, library_filename, label, guide_sequence)
 
     // requires input sequences and labels to be of equal length
     assert_eq!(input_sequences.len(), labels.len());
-    println!("{}", input_sequences.len());
 
     let mut library = Library::new(guide_sequence, input_sequences.len());
     library.load_library(library_filename);
@@ -96,7 +94,8 @@ fn main() {
             idx);
     }
 
-    library.write_count_table(output_filename, labels);
+    library.write_count_table(output_filename, labels)
+        .expect("ERROR: Could not write count table");
 
 }
 
