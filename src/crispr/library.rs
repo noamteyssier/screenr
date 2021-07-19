@@ -11,6 +11,7 @@ pub struct Library {
     rev_regex: Regex,
     num_fwd: u32,
     num_rev: u32,
+    num_total: u32,
     n_samples: usize
 }
 impl Library {
@@ -27,6 +28,7 @@ impl Library {
             fwd_regex, rev_regex,
             num_fwd: 0,
             num_rev: 0,
+            num_total: 0,
             n_samples
         } 
     }
@@ -188,21 +190,28 @@ impl Library {
 
     /// Summary statistics on forward/reverse/total reads
     pub fn summary(&self) {
-        println!(">>Fwd Reads:\t{}", self.num_fwd);
-        println!(">>Rev Reads:\t{}", self.num_rev);
-        println!(">>Total Reads:\t{}", self.num_fwd + self.num_rev);
+        println!("---");
+        println!("Fwd Matches:\t{}", self.num_fwd);
+        println!("Rev Matches:\t{}", self.num_rev);
+        println!("Total Matches:\t{}", self.num_fwd + self.num_rev);
+        println!("Total Processed:\t{}", self.num_total);
+        println!("---");
     }
 
     fn clear_summary(&mut self) {
         self.num_fwd = 0;
         self.num_rev = 0;
+        self.num_total = 0;
     }
 
     /// Match all sequences in a given reader
     pub fn match_reader<R: FastqRead + Iterator<Item = FastqRecord>>(&mut self, reader: &mut R, idx: usize) {
         reader
             .into_iter()
-            .for_each(|x| self.match_seq(&x, idx));
+            .for_each(|x| {
+                self.match_seq(&x, idx);
+                self.num_total += 1;
+            });
 
         self.summary();
         self.clear_summary();
