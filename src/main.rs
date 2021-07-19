@@ -8,8 +8,8 @@ use reader::{Fastq, FastqGz};
 
 
 fn get_args() -> App<'static, 'static> {
-    App::new("sgRNA Counts")
-        .version("0.1")
+    App::new("Screenr")
+        .version("0.2")
         .author("Noam Teyssier <Noam.Teyssier@ucsf.edu>")
         .about("Parses a provided fastq file for a required guide then matches sequences into a provided sgRNA library to determine sgRNA counts")
         .arg(Arg::with_name("INPUT")
