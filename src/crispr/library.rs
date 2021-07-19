@@ -6,6 +6,7 @@ use super::{Fasta, utils::reverse_complement};
 pub struct Library {
     lib: HashMap<String, String>,
     counts: HashMap<String, u32>,
+    genes: HashMap<String, String>,
     fwd_regex: Regex,
     rev_regex: Regex,
     num_fwd: u32,
@@ -21,6 +22,7 @@ impl Library {
         Self {
             lib: HashMap::new(),
             counts: HashMap::new(),
+            genes: HashMap::new(),
             fwd_regex, rev_regex,
             num_fwd: 0,
             num_rev: 0
@@ -34,18 +36,33 @@ impl Library {
             .expect("Error: Could not create regex from seq")
     }
 
+    /// Parses gene information from sequence header
+    fn parse_gene(&self, name: &str) -> String {
+        name.split("_").next().unwrap().to_string()
+    }
+
     /// Reads in a FASTA formatted file and initializes library
     pub fn load_library(&mut self, filename: &str) {
         let fr = Fasta::new(filename)
             .expect("Error: Library could not be found");
         for record in fr.into_iter() {
+           
+            // sequence -> name mapping
             self.lib.insert(
                 record.get_seq().to_string(),
                 record.get_name().to_string(), 
             );
+
+            // name -> counts mapping 
             self.counts.insert(
                 record.get_name().to_string(),
                 0
+            );
+
+            // name -> gene mapping
+            self.genes.insert(
+                record.get_name().to_string(), 
+                self.parse_gene(record.get_name())
             );
         }
     }
@@ -114,20 +131,39 @@ impl Library {
     }
 
     /// Prints the count table to stdout
-    pub fn print_count_table(&mut self, label: &str) {
+    pub fn print_count_table(&self, label: &str) {
+        println!("{}\t{}\t{}\n", "sgRNA", "Gene", label);
         self.counts
-            .retain(|k, v| {println!("{}\t{}\t{}\n", k, v, label); true});
+            .keys()
+            .for_each(|k| {
+                let gene = self.genes.get(k).unwrap();
+                let counts = self.counts.get(k).unwrap();
+                println!("{}\t{}\t{}", k, gene, counts);
+            })
     }
 
     /// Writes the count table to file
     pub fn write_count_table(&mut self, filename: &str, label: &str) {
-        let mut file = File::create(filename).expect("Unable to create file");
+
+        // open file
+        let mut file = File::create(filename)
+            .expect("Unable to create file");
+        
+        // write header
+        file.write_all(
+            format!("{}\t{}\t{}\n", "sgRNA", "Gene", label).as_bytes()
+        ).expect("Error: could not write to file");
+        
+        // write counts
         self.counts
-            .retain(|k, v| {
-                file.write_all(format!("{}\t{}\t{}\n", k, v, label).as_bytes())
-                    .expect("Error: Could not write to file");
-                true
-                });
+            .keys()
+            .for_each(|k| {
+                let gene = self.genes.get(k).unwrap();
+                let counts = self.counts.get(k).unwrap();
+                file.write_all(
+                    format!("{}\t{}\t{}\n", k, gene, counts).as_bytes())
+                        .expect("Error: Could not write to file");
+            });
     }
 
     /// Summary statistics on forward/reverse/total reads
