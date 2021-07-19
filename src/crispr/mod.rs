@@ -1,8 +1,9 @@
-//pub mod direction;
 pub mod library;
-mod utils;
-//pub mod seqmatch;
+pub mod matcher;
+pub mod utils;
 
 pub use library::Library;
-use utils::reverse_complement;
+pub use matcher::Matcher;
 pub use crate::reader::Fasta;
+
+pub use utils::{assign_reader, ReaderType};

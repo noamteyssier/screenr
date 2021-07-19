@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::File, io::Write};
 use regex::Regex;
-use crate::reader::FastqRecord;
+use crate::reader::{FastqRead, FastqRecord};
 use super::{Fasta, utils::reverse_complement};
 
 pub struct Library {
@@ -135,5 +135,10 @@ impl Library {
         println!(">>Fwd Reads:\t{}", self.num_fwd);
         println!(">>Rev Reads:\t{}", self.num_rev);
         println!(">>Total Reads:\t{}", self.num_fwd + self.num_rev);
+    }
+
+    /// Match all sequences in a given reader
+    pub fn match_reader<R: FastqRead + Iterator<Item = FastqRecord>>(&mut self, reader: &mut R) {
+        reader.into_iter().for_each(|x| {self.match_seq(&x)});
     }
 }

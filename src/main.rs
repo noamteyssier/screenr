@@ -1,13 +1,9 @@
 mod reader;
 mod crispr;
 use clap::{App, Arg};
-use crispr::Library;
-use reader::{Fastq, FastqGz, FastqRead, FastqRecord};
+use crispr::{Library, assign_reader, ReaderType, Matcher};
+use reader::{Fastq, FastqGz};
 
-
-enum FQR {
-    Fq, FqGz
-}
 
 fn get_args() -> App<'static, 'static> {
     App::new("sgRNA Counts")
@@ -41,35 +37,32 @@ fn get_args() -> App<'static, 'static> {
             .default_value("GTTTAAGAG"))
 }
 
-fn run_matching<R: FastqRead + Iterator<Item = FastqRecord>>(fqr: R, ofn: &str, lib_fn: &str, guide_seq: &str) {
-    let mut lib = Library::new(guide_seq);
-    lib.load_library(lib_fn);
+fn run_matching(input_sequences: &str, output_filename: &str, library_filename: &str, guide_sequence: &str) {
+    let mut lib = Library::new(guide_sequence);
+    lib.load_library(library_filename);
 
-    for rec in fqr.into_iter() {
-        lib.match_seq(&rec);
-    }
+    match assign_reader(input_sequences) {
 
-    lib.write_count_table(ofn);
-    lib.summary();
+        Some(ReaderType::FASTQ) => {
+            let reader = Fastq::new(input_sequences).unwrap();
+            let mut matcher = Matcher::new(reader, lib);
+            matcher.run();
+            matcher.summary(output_filename);
+        },
+
+        Some(ReaderType::FASTQGZ) => {
+            let reader = FastqGz::new(input_sequences).unwrap();
+            let mut matcher = Matcher::new(reader, lib);
+            matcher.run();
+            matcher.summary(output_filename);
+        },
+
+        _ => {}
+
+    };
+
 }
 
-fn assign_fqr(input_filename: &str) -> Option<FQR> {
-    if input_filename.contains(".fastq.gz") {
-        Some(FQR::FqGz)
-    }
-    else if input_filename.contains(".fq.gz") {
-        Some(FQR::FqGz)
-    }
-    else if input_filename.contains(".fastq") {
-        Some(FQR::Fq)
-    }
-    else if input_filename.contains(".fastq") {
-        Some(FQR::Fq)
-    }
-    else {
-        None
-    }
-}
 
 fn main() {
     let matches = get_args().get_matches();
@@ -82,26 +75,8 @@ fn main() {
         .expect("ERROR: unable to load provided library");
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
-
-    match assign_fqr(input_sequences) {
-        Some(FQR::FqGz) => {
-            run_matching(
-                FastqGz::new(input_sequences).expect(" "),
-                output_filename,
-                library_filename,
-                guide_sequence
-                );
-        },
-        Some(FQR::Fq) => {
-            run_matching(
-                Fastq::new(input_sequences).expect(" "),
-                output_filename,
-                library_filename,
-                guide_sequence
-                );
-        },
-        _ => {}
-    }
+    
+    run_matching(input_sequences, output_filename, library_filename, guide_sequence)
 
 }
 
