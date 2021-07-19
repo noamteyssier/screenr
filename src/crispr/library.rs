@@ -1,21 +1,22 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{collections::HashMap, fs::File, io::{Error, Write}};
 use regex::Regex;
 use crate::reader::{FastqRead, FastqRecord};
 use super::{Fasta, utils::reverse_complement};
 
 pub struct Library {
     lib: HashMap<String, String>,
-    counts: HashMap<String, u32>,
+    counts: HashMap<String, Vec<u32>>,
     genes: HashMap<String, String>,
     fwd_regex: Regex,
     rev_regex: Regex,
     num_fwd: u32,
-    num_rev: u32
+    num_rev: u32,
+    n_samples: usize
 }
 impl Library {
 
     /// Initializes an empty library
-    pub fn new(guide_seq: &str) -> Self {
+    pub fn new(guide_seq: &str, n_samples: usize) -> Self {
         let rc_guide = reverse_complement(guide_seq);
         let fwd_regex = Self::build_regex(guide_seq);
         let rev_regex = Self::build_regex(&rc_guide);
@@ -25,7 +26,8 @@ impl Library {
             genes: HashMap::new(),
             fwd_regex, rev_regex,
             num_fwd: 0,
-            num_rev: 0
+            num_rev: 0,
+            n_samples
         } 
     }
 
@@ -56,7 +58,7 @@ impl Library {
             // name -> counts mapping 
             self.counts.insert(
                 record.get_name().to_string(),
-                0
+                vec![0; self.n_samples]
             );
 
             // name -> gene mapping
@@ -67,7 +69,7 @@ impl Library {
         }
     }
 
-    /// Trunacate the sequence to the 19bp protospacer
+    /// Truncate the sequence to the 19bp protospacer
     fn truncate_seq(&self, seq: &str) -> Option<String> {
         match self.fwd_regex.find_at(seq, 20) {
             Some(mat) => {
@@ -115,55 +117,73 @@ impl Library {
 
     /// Matches the sequence against the library 
     /// and increments the named key
-    fn match_lib(&mut self, seq: &str) {
+    fn match_lib(&mut self, seq: &str, idx: usize) {
         if self.lib.contains_key(seq) {
             let name = self.lib.get(seq).unwrap();
-            *self.counts.get_mut(name).unwrap() += 1;
+            self.counts.get_mut(name).unwrap()[idx] += 1;
         }
     } 
 
     /// Matches the sequence against the library
-    pub fn match_seq(&mut self, record: &FastqRecord) {
+    pub fn match_seq(&mut self, record: &FastqRecord, idx: usize) {
         match self.get_direction(record) {
-            Some(seq) => self.match_lib(&seq),
+            Some(seq) => self.match_lib(&seq, idx),
             _ => ()
         };
     }
 
     /// Prints the count table to stdout
-    pub fn print_count_table(&self, label: &str) {
-        println!("{}\t{}\t{}\n", "sgRNA", "Gene", label);
+    pub fn print_count_table(&self, labels: Vec<&str>) {
+        print!("sgRNA\tGene");
+        for l in labels {
+            print!("\t{}", l);
+        }
+        print!("\n");
+
         self.counts
             .keys()
             .for_each(|k| {
                 let gene = self.genes.get(k).unwrap();
                 let counts = self.counts.get(k).unwrap();
-                println!("{}\t{}\t{}", k, gene, counts);
-            })
+
+                print!("{}\t{}", k, gene);
+                for c in counts.iter() {
+                    print!("\t{}", c);
+                }
+                print!("\n");
+            });
     }
 
     /// Writes the count table to file
-    pub fn write_count_table(&mut self, filename: &str, label: &str) {
+    pub fn write_count_table(&mut self, filename: &str, labels: Vec<&str>) -> Result<(), Error> {
 
         // open file
         let mut file = File::create(filename)
             .expect("Unable to create file");
         
+
         // write header
-        file.write_all(
-            format!("{}\t{}\t{}\n", "sgRNA", "Gene", label).as_bytes()
-        ).expect("Error: could not write to file");
-        
+        file.write_all("sgRNA\tGene".as_bytes())?;
+        for l in labels {
+            file.write_all(format!("\t{}", l).as_bytes())?;
+        }
+        file.write_all("\n".as_bytes())?;
+
         // write counts
         self.counts
             .keys()
             .for_each(|k| {
                 let gene = self.genes.get(k).unwrap();
                 let counts = self.counts.get(k).unwrap();
-                file.write_all(
-                    format!("{}\t{}\t{}\n", k, gene, counts).as_bytes())
-                        .expect("Error: Could not write to file");
+
+                file.write_all(format!("{}\t{}", k, gene).as_bytes()).unwrap();
+                for c in counts.iter() {
+                    file.write_all(format!("\t{}", c).as_bytes()).unwrap();
+                }
+                file.write_all("\n".as_bytes()).unwrap();
             });
+
+        Ok(())
     }
 
     /// Summary statistics on forward/reverse/total reads
@@ -173,8 +193,18 @@ impl Library {
         println!(">>Total Reads:\t{}", self.num_fwd + self.num_rev);
     }
 
+    fn clear_summary(&mut self) {
+        self.num_fwd = 0;
+        self.num_rev = 0;
+    }
+
     /// Match all sequences in a given reader
-    pub fn match_reader<R: FastqRead + Iterator<Item = FastqRecord>>(&mut self, reader: &mut R) {
-        reader.into_iter().for_each(|x| {self.match_seq(&x)});
+    pub fn match_reader<R: FastqRead + Iterator<Item = FastqRecord>>(&mut self, reader: &mut R, idx: usize) {
+        reader
+            .into_iter()
+            .for_each(|x| self.match_seq(&x, idx));
+
+        self.summary();
+        self.clear_summary();
     }
 }

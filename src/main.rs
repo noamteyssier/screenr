@@ -1,7 +1,7 @@
 mod reader;
 mod crispr;
 use clap::{App, Arg};
-use crispr::{Library, assign_reader, ReaderType, Matcher};
+use crispr::{Library, assign_reader, ReaderType};
 use reader::{Fastq, FastqGz};
 
 
@@ -13,9 +13,9 @@ fn get_args() -> App<'static, 'static> {
         .arg(Arg::with_name("INPUT")
             .short("i")
             .long("input")
-            .help("Sets the input fastq file to use (*.fastq, *.fq, *.fastq.gz, *.fq.gz)")
+            .help("Sets the input fastq(s) file to use (*.fastq, *.fq, *.fastq.gz, *.fq.gz)")
             .required(true)
-            .takes_value(true))
+            .min_values(1))
         .arg(Arg::with_name("LIBRARY")
             .short("l")
             .long("library")
@@ -31,9 +31,9 @@ fn get_args() -> App<'static, 'static> {
         .arg(Arg::with_name("LABEL")
             .short("n")
             .long("name")
-            .help("Sets the sample name for file")
+            .help("Sets the sample name for file(s)")
             .required(true)
-            .takes_value(true))
+            .min_values(1))
         .arg(Arg::with_name("GUIDE")
             .short("g")
             .long("guide")
@@ -43,24 +43,18 @@ fn get_args() -> App<'static, 'static> {
             .default_value("GTTTAAGAG"))
 }
 
-fn run_matching(input_sequences: &str, output_filename: &str, library_filename: &str, label: &str, guide_sequence: &str) {
-    let mut lib = Library::new(guide_sequence);
-    lib.load_library(library_filename);
+fn run_matching(input_sequences: &str, library: &mut Library, idx: usize) {
 
     match assign_reader(input_sequences) {
 
         Some(ReaderType::FASTQ) => {
-            let reader = Fastq::new(input_sequences).unwrap();
-            let mut matcher = Matcher::new(reader, lib);
-            matcher.run();
-            matcher.summary(output_filename, label);
+            let mut reader = Fastq::new(input_sequences).unwrap();
+            library.match_reader(&mut reader, idx);
         },
 
         Some(ReaderType::FASTQGZ) => {
-            let reader = FastqGz::new(input_sequences).unwrap();
-            let mut matcher = Matcher::new(reader, lib);
-            matcher.run();
-            matcher.summary(output_filename, label);
+            let mut reader = FastqGz::new(input_sequences).unwrap();
+            library.match_reader(&mut reader, idx);
         },
 
         _ => {}
@@ -73,18 +67,35 @@ fn run_matching(input_sequences: &str, output_filename: &str, library_filename: 
 fn main() {
     let matches = get_args().get_matches();
     
-    let input_sequences = matches.value_of("INPUT")
-        .expect("ERROR: unable to load provided input");
+    let input_sequences: Vec<&str> = matches.values_of("INPUT")
+        .expect("ERROR: unable to load provided input")
+        .collect();
     let library_filename = matches.value_of("LIBRARY")
         .expect("ERROR: unable to load provided library");
     let output_filename = matches.value_of("OUTPUT")
         .expect("ERROR: unable to load provided output");
-    let label = matches.value_of("LABEL")
-        .expect("ERROR: unable to load provided label");
+    let labels: Vec<&str> = matches.values_of("LABEL")
+        .expect("ERROR: unable to load provided label")
+        .collect();
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
-    run_matching(input_sequences, output_filename, library_filename, label, guide_sequence)
+
+    // requires input sequences and labels to be of equal length
+    assert_eq!(input_sequences.len(), labels.len());
+
+    let mut library = Library::new(guide_sequence, input_sequences.len());
+    library.load_library(library_filename);
+
+    for idx in 0..input_sequences.len() {
+        run_matching(
+            input_sequences[idx], 
+            &mut library,
+            idx);
+    }
+
+    library.write_count_table(output_filename, labels)
+        .expect("ERROR: Could not write count table");
 
 }
 
