@@ -116,7 +116,7 @@ impl Library {
     /// Prints the count table to stdout
     pub fn print_count_table(&mut self) {
         self.counts
-            .retain(|k, v| {println!("{} : {}", v, k); true});
+            .retain(|k, v| {println!("{} : {}", k, v); true});
     }
 
     /// Writes the count table to file
@@ -124,7 +124,7 @@ impl Library {
         let mut file = File::create(filename).expect("Unable to create file");
         self.counts
             .retain(|k, v| {
-                file.write_all(format!("{}\t{}\n", v, k).as_bytes())
+                file.write_all(format!("{}\t{}\n", k, v).as_bytes())
                     .expect("Error: Could not write to file");
                 true
                 });
