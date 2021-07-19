@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File, io::{Error, Write}};
 use regex::Regex;
-use crate::reader::{FastqRead, FastqRecord};
-use super::{Fasta, utils::reverse_complement};
+use crate::reader::{FastaGz, FastaRead, FastaRecord, FastqRead, FastqRecord};
+use super::{Fasta, assign_reader, ReaderType, reverse_complement};
 
 pub struct Library {
     lib: HashMap<String, String>,
@@ -45,11 +45,9 @@ impl Library {
         name.split("_").next().unwrap().to_string()
     }
 
-    /// Reads in a FASTA formatted file and initializes library
-    pub fn load_library(&mut self, filename: &str) {
-        let fr = Fasta::new(filename)
-            .expect("Error: Library could not be found");
-        for record in fr.into_iter() {
+    /// Parses sequence information from a fasta formatted reader
+    fn parse_sequences<R: FastaRead + Iterator<Item = FastaRecord>>(&mut self, reader: R) {
+        for record in reader.into_iter() {
            
             // sequence -> name mapping
             self.lib.insert(
@@ -68,6 +66,26 @@ impl Library {
                 record.get_name().to_string(), 
                 self.parse_gene(record.get_name())
             );
+        }
+    }
+
+    /// Reads in a FASTA formatted file and initializes library
+    pub fn load_library(&mut self, filename: &str) -> Result<Option<bool>, Error> {
+
+        match assign_reader(filename) {
+            Some(ReaderType::FASTAGZ) => {
+                let fr = FastaGz::new(filename)?;
+                self.parse_sequences(fr);
+                Ok(Some(true))
+            }
+            Some(ReaderType::FASTA) => {
+                let fr = Fasta::new(filename)?;
+                self.parse_sequences(fr);
+                Ok(Some(true))
+            },
+            _ => {
+                Ok(None)
+            }
         }
     }
 

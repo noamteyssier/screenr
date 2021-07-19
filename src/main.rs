@@ -1,5 +1,7 @@
 mod reader;
 mod crispr;
+use std::path::Path;
+
 use clap::{App, Arg};
 use crispr::{Library, assign_reader, ReaderType};
 use reader::{Fastq, FastqGz};
@@ -43,26 +45,43 @@ fn get_args() -> App<'static, 'static> {
             .default_value("GTTTAAGAG"))
 }
 
+/// Performs the matching algorithm
 fn run_matching(input_sequences: &str, library: &mut Library, idx: usize) {
-
     match assign_reader(input_sequences) {
-
         Some(ReaderType::FASTQ) => {
             let mut reader = Fastq::new(input_sequences).unwrap();
             library.match_reader(&mut reader, idx);
         },
-
         Some(ReaderType::FASTQGZ) => {
             let mut reader = FastqGz::new(input_sequences).unwrap();
             library.match_reader(&mut reader, idx);
         },
-
         _ => {}
-
     };
-
 }
 
+/// Confirms that inputs are in the expected format
+fn validate_inputs(input_sequences: &Vec<&str>, library_filename: &str, labels: &Vec<&str>, guide_sequence: &str) {
+   
+    // validates `input_sequences` and `labels` are equal lengths
+    assert_eq!(
+        input_sequences.len(),
+        labels.len(),
+        "Number of files + number of labels provided are unequal"
+    );
+
+    // validates `library_filename` exists
+    assert!(
+        Path::new(library_filename).exists(),
+        "Provided library path does not exist"
+    );
+
+    // validates `guide_sequence` length is > 5
+    assert!(
+        guide_sequence.len() > 5,
+        "Provided guide sequence must be at least 5 basepairs"
+    );
+}
 
 fn main() {
     let matches = get_args().get_matches();
@@ -80,13 +99,14 @@ fn main() {
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
+    // validate inputs
+    validate_inputs(&input_sequences, library_filename, &labels, guide_sequence);
 
-    // requires input sequences and labels to be of equal length
-    assert_eq!(input_sequences.len(), labels.len());
-
+    // load library
     let mut library = Library::new(guide_sequence, input_sequences.len());
-    library.load_library(library_filename);
+    library.load_library(library_filename).expect("ERROR: Could not load library");
 
+    // iterate sequences
     for idx in 0..input_sequences.len() {
         run_matching(
             input_sequences[idx], 
@@ -94,8 +114,8 @@ fn main() {
             idx);
     }
 
+    // write output
     library.write_count_table(output_filename, labels)
         .expect("ERROR: Could not write count table");
-
 }
 
