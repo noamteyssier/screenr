@@ -16,16 +16,22 @@ fn get_args() -> App<'static, 'static> {
             .help("Sets the input fastq file to use (*.fastq, *.fq, *.fastq.gz, *.fq.gz)")
             .required(true)
             .takes_value(true))
+        .arg(Arg::with_name("LIBRARY")
+            .short("l")
+            .long("library")
+            .help("Sets the input fasta file to use as a guide library")
+            .required(true)
+            .takes_value(true))
         .arg(Arg::with_name("OUTPUT")
             .short("o")
             .long("output")
             .help("Sets the output tsv to write guide counts to")
             .required(true)
             .takes_value(true))
-        .arg(Arg::with_name("LIBRARY")
-            .short("l")
-            .long("library")
-            .help("Sets the input fasta file to use as a guide library")
+        .arg(Arg::with_name("LABEL")
+            .short("n")
+            .long("name")
+            .help("Sets the sample name for file")
             .required(true)
             .takes_value(true))
         .arg(Arg::with_name("GUIDE")
@@ -37,7 +43,7 @@ fn get_args() -> App<'static, 'static> {
             .default_value("GTTTAAGAG"))
 }
 
-fn run_matching(input_sequences: &str, output_filename: &str, library_filename: &str, guide_sequence: &str) {
+fn run_matching(input_sequences: &str, output_filename: &str, library_filename: &str, label: &str, guide_sequence: &str) {
     let mut lib = Library::new(guide_sequence);
     lib.load_library(library_filename);
 
@@ -47,14 +53,14 @@ fn run_matching(input_sequences: &str, output_filename: &str, library_filename: 
             let reader = Fastq::new(input_sequences).unwrap();
             let mut matcher = Matcher::new(reader, lib);
             matcher.run();
-            matcher.summary(output_filename);
+            matcher.summary(output_filename, label);
         },
 
         Some(ReaderType::FASTQGZ) => {
             let reader = FastqGz::new(input_sequences).unwrap();
             let mut matcher = Matcher::new(reader, lib);
             matcher.run();
-            matcher.summary(output_filename);
+            matcher.summary(output_filename, label);
         },
 
         _ => {}
@@ -69,14 +75,16 @@ fn main() {
     
     let input_sequences = matches.value_of("INPUT")
         .expect("ERROR: unable to load provided input");
-    let output_filename = matches.value_of("OUTPUT")
-        .expect("ERROR: unable to load provided output");
     let library_filename = matches.value_of("LIBRARY")
         .expect("ERROR: unable to load provided library");
+    let output_filename = matches.value_of("OUTPUT")
+        .expect("ERROR: unable to load provided output");
+    let label = matches.value_of("LABEL")
+        .expect("ERROR: unable to load provided label");
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
-    run_matching(input_sequences, output_filename, library_filename, guide_sequence)
+    run_matching(input_sequences, output_filename, library_filename, label, guide_sequence)
 
 }
 

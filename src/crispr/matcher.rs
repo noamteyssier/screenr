@@ -22,8 +22,8 @@ where
     }
 
     /// Write summary statistics to file + stdout
-    pub fn summary(&mut self, output_filename: &str) {
-        self.library.write_count_table(output_filename);
+    pub fn summary(&mut self, output_filename: &str, label: &str) {
+        self.library.write_count_table(output_filename, label);
         self.library.summary();
     }
 }

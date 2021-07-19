@@ -114,17 +114,17 @@ impl Library {
     }
 
     /// Prints the count table to stdout
-    pub fn print_count_table(&mut self) {
+    pub fn print_count_table(&mut self, label: &str) {
         self.counts
-            .retain(|k, v| {println!("{} : {}", k, v); true});
+            .retain(|k, v| {println!("{}\t{}\t{}\n", k, v, label); true});
     }
 
     /// Writes the count table to file
-    pub fn write_count_table(&mut self, filename: &str) {
+    pub fn write_count_table(&mut self, filename: &str, label: &str) {
         let mut file = File::create(filename).expect("Unable to create file");
         self.counts
             .retain(|k, v| {
-                file.write_all(format!("{}\t{}\n", k, v).as_bytes())
+                file.write_all(format!("{}\t{}\t{}\n", k, v, label).as_bytes())
                     .expect("Error: Could not write to file");
                 true
                 });
