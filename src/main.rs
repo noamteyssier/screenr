@@ -9,7 +9,7 @@ use clap::{App, Arg};
 
 fn get_args() -> App<'static, 'static> {
     App::new("Screenr")
-        .version("0.2")
+        .version("0.3")
         .author("Noam Teyssier <Noam.Teyssier@ucsf.edu>")
         .about("Parses a provided fastq file for a required guide then matches sequences into a provided sgRNA library to determine sgRNA counts")
         .arg(Arg::with_name("INPUT")
