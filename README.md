@@ -6,7 +6,7 @@ This is a tool for parsing CRISPRi/a screens and assigned counts to the provided
 # clone repo and install binary
 git clone https://github.com/noamteyssier/screenr
 cd screenr
-cargo install --release
+cargo install --path . 
 
 # validate screenr is in your path
 screenr --version
