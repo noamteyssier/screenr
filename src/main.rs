@@ -1,15 +1,15 @@
 mod reader;
 mod crispr;
-use std::path::Path;
 
-use clap::{App, Arg};
 use crispr::{Library, assign_reader, ReaderType};
 use reader::{Fastq, FastqGz};
 
+use std::path::Path;
+use clap::{App, Arg};
 
 fn get_args() -> App<'static, 'static> {
     App::new("Screenr")
-        .version("0.2")
+        .version("0.3")
         .author("Noam Teyssier <Noam.Teyssier@ucsf.edu>")
         .about("Parses a provided fastq file for a required guide then matches sequences into a provided sgRNA library to determine sgRNA counts")
         .arg(Arg::with_name("INPUT")
@@ -27,12 +27,11 @@ fn get_args() -> App<'static, 'static> {
         .arg(Arg::with_name("OUTPUT")
             .short("o")
             .long("output")
-            .help("Sets the output tsv to write guide counts to")
-            .required(true)
+            .help("Sets the output tsv to write guide counts to (default = stdout)")
             .takes_value(true))
-        .arg(Arg::with_name("LABEL")
+        .arg(Arg::with_name("NAMES")
             .short("n")
-            .long("name")
+            .long("names")
             .help("Sets the sample name for file(s)")
             .required(true)
             .min_values(1))
@@ -61,13 +60,13 @@ fn run_matching(input_sequences: &str, library: &mut Library, idx: usize) {
 }
 
 /// Confirms that inputs are in the expected format
-fn validate_inputs(input_sequences: &Vec<&str>, library_filename: &str, labels: &Vec<&str>, guide_sequence: &str) {
+fn validate_inputs(input_sequences: &Vec<&str>, library_filename: &str, names: &Vec<&str>, guide_sequence: &str) {
    
-    // validates `input_sequences` and `labels` are equal lengths
+    // validates `input_sequences` and `names` are equal lengths
     assert_eq!(
         input_sequences.len(),
-        labels.len(),
-        "Number of files + number of labels provided are unequal"
+        names.len(),
+        "Number of files + number of names provided are unequal"
     );
 
     // validates `library_filename` exists
@@ -91,16 +90,15 @@ fn main() {
         .collect();
     let library_filename = matches.value_of("LIBRARY")
         .expect("ERROR: unable to load provided library");
-    let output_filename = matches.value_of("OUTPUT")
-        .expect("ERROR: unable to load provided output");
-    let labels: Vec<&str> = matches.values_of("LABEL")
+    let output_filename = matches.value_of("OUTPUT");
+    let names: Vec<&str> = matches.values_of("NAMES")
         .expect("ERROR: unable to load provided label")
         .collect();
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
     // validate inputs
-    validate_inputs(&input_sequences, library_filename, &labels, guide_sequence);
+    validate_inputs(&input_sequences, library_filename, &names, guide_sequence);
 
     // load library
     let mut library = Library::new(guide_sequence, input_sequences.len());
@@ -115,7 +113,14 @@ fn main() {
     }
 
     // write output
-    library.write_count_table(output_filename, labels)
-        .expect("ERROR: Could not write count table");
+    match output_filename {
+        Some(ofn) => {
+            library.write_count_table(ofn, names)
+                .expect("ERROR: Could not write count table");
+        },
+        None => {
+            library.print_count_table(names);
+        }
+    }
 }
 

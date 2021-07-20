@@ -21,7 +21,7 @@ impl FastaRead for FastaGz {
     fn next_record(&mut self) -> Option<FastaRecord> {
         let mut rec = FastaRecord::new();
 
-        for i in 0..4 {
+        for i in 0..2 {
             if self.pop_line().expect("Unexpected end to file") {
                 match i {
                     0 => rec.add_name(self.line.trim().trim_start_matches('>')),

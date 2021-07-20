@@ -26,7 +26,7 @@ pub fn assign_reader(s: &str) -> Option<ReaderType> {
     let re_fastq_gz = Regex::new(r".fastq.gz$|.fq.gz$").expect("Could not compile regex");
     let re_fasta_gz = Regex::new(r".fasta.gz$|.fa.gz$").expect("Could not compile regex");
     let re_fastq = Regex::new(r".fastq$|.fq$").expect("Could not compile regex");
-    let re_fasta = Regex::new(r".fastq$|.fq$").expect("Could not compile regex");
+    let re_fasta = Regex::new(r".fasta$|.fa$").expect("Could not compile regex");
 
     if re_fastq_gz.is_match(s) {
         Some(ReaderType::FASTQGZ)

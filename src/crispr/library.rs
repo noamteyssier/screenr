@@ -42,7 +42,10 @@ impl Library {
 
     /// Parses gene information from sequence header
     fn parse_gene(&self, name: &str) -> String {
-        name.split("_").next().unwrap().to_string()
+        name.split("_")
+            .next()
+            .unwrap()
+            .to_string()
     }
 
     /// Parses sequence information from a fasta formatted reader
@@ -153,9 +156,9 @@ impl Library {
     }
 
     /// Prints the count table to stdout
-    pub fn print_count_table(&self, labels: Vec<&str>) {
+    pub fn print_count_table(&self, names: Vec<&str>) {
         print!("sgRNA\tGene");
-        for l in labels {
+        for l in names {
             print!("\t{}", l);
         }
         print!("\n");
@@ -175,7 +178,7 @@ impl Library {
     }
 
     /// Writes the count table to file
-    pub fn write_count_table(&mut self, filename: &str, labels: Vec<&str>) -> Result<(), Error> {
+    pub fn write_count_table(&mut self, filename: &str, names: Vec<&str>) -> Result<(), Error> {
 
         // open file
         let mut file = File::create(filename)
@@ -184,7 +187,7 @@ impl Library {
 
         // write header
         file.write_all("sgRNA\tGene".as_bytes())?;
-        for l in labels {
+        for l in names {
             file.write_all(format!("\t{}", l).as_bytes())?;
         }
         file.write_all("\n".as_bytes())?;
@@ -208,12 +211,12 @@ impl Library {
 
     /// Summary statistics on forward/reverse/total reads
     pub fn summary(&self) {
-        println!("---");
-        println!("Fwd Matches:\t{}", self.num_fwd);
-        println!("Rev Matches:\t{}", self.num_rev);
-        println!("Total Matches:\t{}", self.num_fwd + self.num_rev);
-        println!("Total Processed:\t{}", self.num_total);
-        println!("---");
+        eprintln!("---");
+        eprintln!("Fwd Matches:\t{}", self.num_fwd);
+        eprintln!("Rev Matches:\t{}", self.num_rev);
+        eprintln!("Total Matches:\t{}", self.num_fwd + self.num_rev);
+        eprintln!("Total Processed:\t{}", self.num_total);
+        eprintln!("---");
     }
 
     fn clear_summary(&mut self) {
@@ -224,6 +227,12 @@ impl Library {
 
     /// Match all sequences in a given reader
     pub fn match_reader<R: FastqRead + Iterator<Item = FastqRecord>>(&mut self, reader: &mut R, idx: usize) {
+
+        // confirms that the provided index
+        // is not above the maximum expected 
+        assert!(idx < self.n_samples);
+
+
         reader
             .into_iter()
             .for_each(|x| {
