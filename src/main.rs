@@ -38,7 +38,7 @@ fn get_args() -> App<'static, 'static> {
         .arg(Arg::with_name("GUIDE")
             .short("g")
             .long("guide")
-            .help("Sets the input guide sequence to match on (default='GTTTAAGAG')")
+            .help("Sets the input guide sequence to match on")
             .required(false)
             .takes_value(true)
             .default_value("GTTTAAGAG"))
