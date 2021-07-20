@@ -1,4 +1,6 @@
 use std::{collections::HashMap, fs::File, io::{Error, Write}};
+use std::time::Instant;
+use indicatif::ProgressBar;
 use regex::Regex;
 use crate::reader::{FastaGz, FastaRead, FastaRecord, FastqRead, FastqRecord};
 use super::{Fasta, assign_reader, ReaderType, reverse_complement};
@@ -232,13 +234,34 @@ impl Library {
         // is not above the maximum expected 
         assert!(idx < self.n_samples);
 
+        // show progress bar
+        let pb = ProgressBar::new_spinner();
+        pb.enable_steady_tick(100);
+
+        // keep track of elapsed time
+        let start_time = Instant::now();
 
         reader
             .into_iter()
             .for_each(|x| {
                 self.match_seq(&x, idx);
                 self.num_total += 1;
+
+                // update progress bar
+                if self.num_total % 10000 == 0 {
+                    pb.set_message(&format!(
+                        "Processing... {} records // {:.2} sec elapsed", 
+                        self.num_total, 
+                        start_time.elapsed().as_secs_f32()
+                        ));
+                }
             });
+        pb.set_message(&format!(
+            "Processing... {} records // {:.2} sec elapsed",
+            self.num_total,
+            start_time.elapsed().as_secs_f32()
+            ));
+        pb.finish();
 
         self.summary();
         self.clear_summary();
