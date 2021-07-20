@@ -20,7 +20,7 @@ screenr --help
 ```bash
 # perform count mapping for a single fastq
 screenr \
-	--input data/test/subset0000.fastq.gz \
+	--input data/example/subset0000.fastq.gz \
 	--names lib1 \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
 ```
@@ -29,7 +29,7 @@ screenr \
 ```bash
 # perform count mapping for a single fastq
 screenr \
-	--input data/test/subset0000.fastq.gz \
+	--input data/example/subset0000.fastq.gz \
 	--names lib1 \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
 	--output lib1.tab
@@ -38,7 +38,7 @@ screenr \
 ### Count mapping for multiple samples
 ```bash
 screenr \
-	--input data/test/subset0000.fastq.gz data/test/subset0001.fastq.gz data/test/subset0002.fastq.gz \
+	--input data/example/subset0000.fastq.gz data/example/subset0001.fastq.gz data/example/subset0002.fastq.gz \
 	--names lib1 lib2 lib3 \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
 ```
@@ -47,7 +47,7 @@ screenr \
 ### Count mapping for all samples in a directory
 ```bash
 screenr \
-	--input data/test/subset00*.fastq.gz \
+	--input data/example/subset00*.fastq.gz \
 	--names lib{0..10} \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
 ```
@@ -55,7 +55,7 @@ screenr \
 ### Count mapping for all fastqs in a directory only using a subset of sgRNAs
 ```bash
 screenr \
-	--input data/test/subset00*.fastq.gz \
+	--input data/example/subset00*.fastq.gz \
 	--names lib{0..10} \
 	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
 ```
@@ -64,7 +64,7 @@ screenr \
 ```bash
 # default = "GTTTAAGAG"
 screenr \
-	--input data/test/subset00*.fastq.gz \
+	--input data/example/subset00*.fastq.gz \
 	--names lib{0..10} \
 	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
 	--guide GCGCGAA
