@@ -16,32 +16,56 @@ screenr --help
 ```
 
 ## Usage
+### Count mapping for a single sample
 ```bash
 # perform count mapping for a single fastq
 screenr \
 	--input data/test/subset0000.fastq.gz \
-	--name lib1 \
-	--output lib1.tab \
+	--names lib1 \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
+```
 
-# perform count mapping for multiple fastqs
+### Count mapping for a single sample writing results to an output file
+```bash
+# perform count mapping for a single fastq
+screenr \
+	--input data/test/subset0000.fastq.gz \
+	--names lib1 \
+	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
+	--output lib1.tab
+```
+
+### Count mapping for multiple samples
+```bash
 screenr \
 	--input data/test/subset0000.fastq.gz data/test/subset0001.fastq.gz data/test/subset0002.fastq.gz \
-	--name lib1 lib2 lib3 \
-	--output sample_counts_libs123.tab \
+	--names lib1 lib2 lib3 \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
+```
 
-# perform count mapping for all fastqs in a directory
+
+### Count mapping for all samples in a directory
+```bash
 screenr \
 	--input data/test/subset00*.fastq.gz \
-	--name lib{0..10} \
-	--output sample_counts.tab \
+	--names lib{0..10} \
 	--library data/libraries/CRISPRi_v2_crop28.all.fasta.gz
+```
 
-# perform count mapping for all fastqs in a directory only using a subset of sgRNAs
+### Count mapping for all fastqs in a directory only using a subset of sgRNAs
+```bash
 screenr \
 	--input data/test/subset00*.fastq.gz \
-	--name lib{0..10} \
-	--output sample_counts.tab \
+	--names lib{0..10} \
 	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
+```
+
+### Count mapping for all fastqs in a directory using a custom search guide 
+```bash
+# default = "GTTTAAGAG"
+screenr \
+	--input data/test/subset00*.fastq.gz \
+	--names lib{0..10} \
+	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
+	--guide GCGCGAA
 ```
