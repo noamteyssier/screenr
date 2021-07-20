@@ -57,7 +57,7 @@ screenr \
 screenr \
 	--input data/example/subset00*.fastq.gz \
 	--names lib{0..10} \
-	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
+	--library data/libraries/CRISPRi_v2_crop28.h1.fasta.gz
 ```
 
 ### Count mapping for all fastqs in a directory using a custom search guide 
@@ -66,6 +66,6 @@ screenr \
 screenr \
 	--input data/example/subset00*.fastq.gz \
 	--names lib{0..10} \
-	--library data/libraries/CRISPRi_v2_crop28.1.fasta.gz
+	--library data/libraries/CRISPRi_v2_crop28.h1.fasta.gz
 	--guide GCGCGAA
 ```
