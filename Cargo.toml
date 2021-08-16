@@ -3,6 +3,9 @@ name = "screenr"
 version = "0.3.0"
 authors = ["noamteyssier <nb.teyssier@gmail.com>"]
 edition = "2018"
+description = "A package to map sequencing files to their expected CRISPRi/a library"
+license = "MIT"
+repository = "https://github.com/noamteyssier/screenr"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
