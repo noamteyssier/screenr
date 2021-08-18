@@ -4,6 +4,7 @@ mod crispr;
 use crispr::{Library, assign_reader, ReaderType};
 use reader::{Fastq, FastqGz};
 
+use std::collections::HashSet;
 use std::path::Path;
 use clap::{App, Arg};
 
@@ -21,7 +22,7 @@ fn get_args() -> App<'static, 'static> {
         .arg(Arg::with_name("LIBRARY")
             .short("l")
             .long("library")
-            .help("Sets the input fasta file to use as a guide library")
+            .help("Sets the input fasta file to use as a guide library [can also provide 'all' or 'h[1..7]' without path]")
             .required(true)
             .takes_value(true))
         .arg(Arg::with_name("OUTPUT")
@@ -82,14 +83,46 @@ fn validate_inputs(input_sequences: &Vec<&str>, library_filename: &str, names: &
     );
 }
 
+/// creates the known libraries 
+fn build_known_library() -> HashSet<String> {
+
+    // builds known libraries
+    let mut known_libraries = HashSet::new();
+    
+    known_libraries.insert(
+        "all".to_string(),
+        );
+    
+    for i in 1..8 {
+        let basename = format!("h{}", i);
+        known_libraries.insert(
+            basename.to_string(),
+            );
+    }
+
+    known_libraries
+}
+
+/// If provided library is known and supported will reassign shorthand to fixed path
+fn reassign_library(lib: &str) -> Option<String> {
+    let cargo_path = env!("CARGO_MANIFEST_DIR");
+    let known_libraries = build_known_library();
+    if known_libraries.contains(lib) {
+        Some(format!("{}/data/libraries/CRISPRi_v2_crop28.{}.fasta.gz", cargo_path, lib))
+    }
+    else {
+        None
+    }
+}
+
 fn main() {
     let matches = get_args().get_matches();
     
     let input_sequences: Vec<&str> = matches.values_of("INPUT")
         .expect("ERROR: unable to load provided input")
         .collect();
-    let library_filename = matches.value_of("LIBRARY")
-        .expect("ERROR: unable to load provided library");
+    let mut library_filename = matches.value_of("LIBRARY")
+        .expect("ERROR: unable to load provided library").to_string();
     let output_filename = matches.value_of("OUTPUT");
     let names: Vec<&str> = matches.values_of("NAMES")
         .expect("ERROR: unable to load provided label")
@@ -97,12 +130,20 @@ fn main() {
     let guide_sequence = matches.value_of("GUIDE")
         .expect("ERROR: unable to load provided guide");
     
+
+    match reassign_library(&library_filename) {
+        Some(pathname) => {
+            library_filename = pathname;
+        },
+        None => {}
+    };
+
     // validate inputs
-    validate_inputs(&input_sequences, library_filename, &names, guide_sequence);
+    validate_inputs(&input_sequences, &library_filename, &names, guide_sequence);
 
     // load library
     let mut library = Library::new(guide_sequence, input_sequences.len());
-    library.load_library(library_filename).expect("ERROR: Could not load library");
+    library.load_library(&library_filename).expect("ERROR: Could not load library");
 
     // iterate sequences
     for idx in 0..input_sequences.len() {
